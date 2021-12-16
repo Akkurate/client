@@ -2,6 +2,11 @@ const crypto = require("crypto");
 const url = require("url");
 const zlib = require("zlib");
 
+// generate nonce minimal length 70
+function generateNonce() {
+  return new Date().getTime() + crypto.randomBytes(32).toString("hex");
+}
+
 // handle content gracefully
 // if a server supports gzip, it will be decompressed
 async function handleGzip(response, body) {
@@ -49,13 +54,8 @@ function getFetchOptions() {
   }
 }
 
-// generate nonce minimal length 70
-function generateNonce() {
-  return new Date().getTime() + crypto.randomBytes(32).toString("hex");
-}
-
 // main function
-async function diagnose(targetURL, query) {
+async function diagnose(keys, targetURL, query) {
   const fetchOptions = getFetchOptions();
   const urlOptions = {
     ...fetchOptions.options,
@@ -65,8 +65,8 @@ async function diagnose(targetURL, query) {
   const requestUrl = url.parse(url.format(urlOptions));
   const Nonce = generateNonce();
 
-  const PublicKey = process.env.DIAGNOSE_PUBLIC_KEY || "123";
-  const SecretKey = process.env.DIAGNOSE_SECRET_KEY || `123`;
+  const PublicKey = keys.publicKey;
+  const SecretKey = keys.secretKey;
 
   const Signature = crypto
     .createHmac("sha512", SecretKey)
