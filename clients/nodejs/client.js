@@ -62,6 +62,12 @@ function generateRand(length) {
   return text;
 }
 
+function createClient(publicKey, secretKey) {
+  return {
+    get: (url, query) => diagnose({ publicKey, secretKey }, url, query),
+  };
+}
+
 // main function
 async function diagnose(keys, targetURL, query) {
   const fetchOptions = getFetchOptions();
@@ -84,19 +90,21 @@ async function diagnose(keys, targetURL, query) {
     .update(ToBeSigned)
     .digest("hex");
 
+  const headers = {
+    PublicKey,
+    Nonce,
+    Rand,
+    Signature,
+    "Accept-Encoding": "gzip,deflate",
+  };
+
   const options = {
     hostname: requestUrl.hostname,
     port: requestUrl.port,
     path: requestUrl.path,
     rejectUnauthorized: true,
     method: "GET",
-    headers: {
-      PublicKey,
-      Nonce,
-      Rand,
-      Signature,
-      "Accept-Encoding": "gzip,deflate",
-    },
+    headers,
   };
 
   return new Promise((resolve, reject) => {
@@ -119,4 +127,4 @@ async function diagnose(keys, targetURL, query) {
   });
 }
 
-module.exports = { diagnose };
+module.exports = { createClient };
