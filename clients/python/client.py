@@ -57,7 +57,7 @@ def diagnose(opts):
         r = requests.get(url, headers=getHmac())
         if(r.status_code == 200):
             data = json.loads(r.content)
-            return data['response']
+            return data
         else:
             raise Exception(f"request failed \r\n Status: {r.status_code} \r\n {r.content.decode('utf-8')}")
     except Exception as ex:

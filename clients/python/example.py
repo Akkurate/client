@@ -6,9 +6,9 @@ def getExampleData():
 
     data = diagnose(Opts)
 
-    if(data == []):
+    if(data['response'] == []):
         raise Exception("no data received")
-    return data
+    return data['response']
 
 
 data = getExampleData()
