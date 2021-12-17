@@ -25,9 +25,9 @@ async function handleGzip(response, body) {
 // collect response in chunks
 async function getContent(response) {
   return new Promise((resolve, reject) => {
-    let body = "";
-    response.on("data", (chunk) => (body += chunk));
-    response.on("end", () => resolve(handleGzip(response, body)));
+    let body = [];
+    response.on("data", (chunk) => (body.push(chunk)));
+    response.on("end", () => resolve(handleGzip(response, Buffer.concat(body))));
     response.on("error", (err) => reject(err));
   });
 }
@@ -83,7 +83,8 @@ async function diagnose(keys, targetURL, query) {
       PublicKey,
       Nonce,
       Signature,
-    },
+      'Accept-Encoding': 'gzip,deflate'
+    }
   };
 
   return new Promise((resolve, reject) => {
