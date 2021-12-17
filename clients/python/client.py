@@ -1,8 +1,9 @@
 import hashlib
 import hmac
 import json
-import secrets
+from math import floor
 from os import getenv
+from random import random
 from time import time
 from urllib.parse import urlunparse
 
@@ -14,17 +15,24 @@ except:
 
 
 def getHmac() -> dict:
-    Nonce = generateNonce()
-    Signature = generateSignature(Nonce)
+    rand = generateRand(70)
+    nonce = int(time()*1000)  # server requires microseconds
     PublicKey = getenv("DIAGNOSE_PUBLIC_KEY", "")
+    forSigning = PublicKey + str(nonce) + rand
+    Signature = generateSignature(forSigning)
+
     if PublicKey == "" or Signature == "":
         raise Exception("Public or secret key missing")
-    return {"PublicKey": PublicKey, "Nonce": Nonce, "Signature": Signature}
+    return {"PublicKey": PublicKey, "Nonce": str(nonce), "Rand": rand, "Signature": Signature}
 
 
-def generateNonce():
-    hx = secrets.token_bytes(32)
-    return str(int(time())) + hx.hex()
+def generateRand(length: int) -> str:
+    text = ""
+    possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()_+-=[]{}|',./<>?"
+    for _ in range(0, length):
+        text += possible[floor(random()*length)]
+    print(len(text))
+    return text
 
 
 def generateSignature(Nonce):
@@ -33,7 +41,7 @@ def generateSignature(Nonce):
         return ""
     encodedNonce = Nonce.encode()
     byte_key = bytes(SecretKey, 'UTF-8')
-    Signature = hmac.new(byte_key, None, hashlib.sha512)
+    Signature = hmac.new(byte_key, None, hashlib.sha256)
     Signature.update(encodedNonce)
     strSignature = Signature.hexdigest()
     return strSignature
