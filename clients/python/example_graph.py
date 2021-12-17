@@ -2,7 +2,7 @@ try:
     import pandas as pd
     import plotly.graph_objects as go
 except:
-    print("please uncomment pandas and plotly from requirements and do 'pip i -r requirements.txt'")
+    print("please uncomment pandas and plotly from requirements and do 'pip install -r requirements.txt'")
     exit(1)
 
 from example import getExampleData

@@ -10,7 +10,7 @@ from urllib.parse import urlunparse
 try:
     import requests
 except:
-    print("please do 'pip i -r requirements.txt")
+    print("please do 'pip install -r requirements.txt")
     exit(1)
 
 
