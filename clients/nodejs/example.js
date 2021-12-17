@@ -10,7 +10,7 @@ async function main() {
   const result = await api("/v1/prognose", {
     source: "Battery01",
   });
-  console.log(result);
+  console.log(JSON.stringify(result, null, 2));
 }
 
 main().catch((e) => console.error(e));
