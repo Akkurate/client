@@ -2,11 +2,6 @@ const crypto = require("crypto");
 const url = require("url");
 const zlib = require("zlib");
 
-// generate nonce minimal length 70
-function generateNonce() {
-  return new Date().getTime() + crypto.randomBytes(32).toString("hex");
-}
-
 // handle content gracefully
 // if a server supports gzip, it will be decompressed
 async function handleGzip(response, body) {
@@ -17,7 +12,7 @@ async function handleGzip(response, body) {
         return resolve(dezipped.toString());
       });
     } else {
-      return resolve(body);
+      return resolve(body.toString());
     }
   });
 }
@@ -26,8 +21,10 @@ async function handleGzip(response, body) {
 async function getContent(response) {
   return new Promise((resolve, reject) => {
     let body = [];
-    response.on("data", (chunk) => (body.push(chunk)));
-    response.on("end", () => resolve(handleGzip(response, Buffer.concat(body))));
+    response.on("data", (chunk) => body.push(chunk));
+    response.on("end", () =>
+      resolve(handleGzip(response, Buffer.concat(body)))
+    );
     response.on("error", (err) => reject(err));
   });
 }
@@ -54,6 +51,17 @@ function getFetchOptions() {
   }
 }
 
+// generate random string with lenght 70 including special characters
+function generateRand(length) {
+  let text = "";
+  const possible =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()_+-=[]{}|',./<>?";
+  for (let i = 0; i < length; i++)
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+  return text;
+}
+
 // main function
 async function diagnose(keys, targetURL, query) {
   const fetchOptions = getFetchOptions();
@@ -63,14 +71,17 @@ async function diagnose(keys, targetURL, query) {
     query: query,
   };
   const requestUrl = url.parse(url.format(urlOptions));
-  const Nonce = generateNonce();
+  const Nonce = new Date().getTime();
 
   const PublicKey = keys.publicKey;
   const SecretKey = keys.secretKey;
+  const Rand = generateRand(70);
+
+  const ToBeSigned = PublicKey + Nonce + Rand;
 
   const Signature = crypto
-    .createHmac("sha512", SecretKey)
-    .update(Nonce)
+    .createHmac("sha256", SecretKey)
+    .update(ToBeSigned)
     .digest("hex");
 
   const options = {
@@ -82,9 +93,10 @@ async function diagnose(keys, targetURL, query) {
     headers: {
       PublicKey,
       Nonce,
+      Rand,
       Signature,
-      'Accept-Encoding': 'gzip,deflate'
-    }
+      "Accept-Encoding": "gzip,deflate",
+    },
   };
 
   return new Promise((resolve, reject) => {
